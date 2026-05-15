@@ -1,0 +1,76 @@
+# =========================
+# Virtual Environment
+# =========================
+ml_env/
+venv/
+.venv/
+
+# =========================
+# Python Cache
+# =========================
+__pycache__/
+*.py[cod]
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Raw Dataset
+# =========================
+WDM_dataset/WESAD/
+
+# =========================
+# Large Processed Data
+# =========================
+WDM_dataset/Interim/
+WDM_dataset/Features/
+
+# =========================
+# Visualizations Outputs
+# =========================
+wesad_top7_graphs.ipynb
+wesad_basic_exploration.ipynb
+wesad_eda_visualizations.ipynb
+wesad_ppt_graphs.ipynb
+
+WDM_dataset/Visualizations/
+WDM_dataset/Visualizations2/
+
+# =========================
+# ML Model Files
+# =========================
+*.pkl
+*.joblib
+*.h5
+*.keras
+*.pt
+*.pth
+
+# =========================
+# Logs / Results
+# =========================
+logs/
+runs/
+tensorboard_logs/
+
+# =========================
+# VSCode / IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS Junk
+# =========================
+.DS_Store
+Thumbs.db
+
+
+Untitled.ipynb
+Untitled1.ipynb
+Untitled2.ipynb
+Untitled3.ipynb
+Untitled4.ipynb
+Untitled5.ipynb
