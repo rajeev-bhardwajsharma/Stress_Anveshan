@@ -1,3 +1,16 @@
+"""
+benchmark.py
+------------
+Entry point for the full experiment grid.
+
+Outputs (written to OUTPUT_DIR):
+  results_detailed.csv      — per-subject metrics for every model × experiment
+  predictions_for_curves.csv — per-window y_true + y_prob for ROC / PR curves
+
+Usage:
+  python benchmark.py
+  WDM_OUTPUT_DIR=/my/path python benchmark.py   # override output directory
+"""
 import pandas as pd
 from data_loader import load_dataset
 from loso import run_loso
@@ -22,7 +35,7 @@ EXPERIMENTS = {
 }
 
 # ── 2. Models — scalable modifies model.py and add a string here itemize the string
-MODELS = ["rf", "svm"]
+MODELS = ["rf", "svm","xgboost"]
 
 # ── 3. Run 
 all_results = []
