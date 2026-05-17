@@ -15,10 +15,36 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np #added numpy
 
-def run_loso(df, model):
-    subjects = df["subject"].unique()
+#making non features column global varibale
+NON_FEATURE_COLS = ["label", "subject", "window_idx", "start_time", "end_time"]
 
-    results = []
+def run_loso(
+        df: pd.DataFrame,
+        model,
+        model_name:str="unknown",
+        exp_name:str="unknown",
+) -> tuple[pd.DataFrame,pd.DataFrame]:
+    """
+    Run LOSO cross-validation.
+
+    Parameters
+    
+    df         : merged, binarized DataFrame from load_dataset()
+    model      : unfitted sklearn-compatible estimator
+    model_name : string label, e.g. "rf" — written into predictions_df
+    exp_name   : string label, e.g. "chest_all" — written into predictions_df
+
+    Returns
+    
+    metrics_df     : pd.DataFrame  — per-subject performance metrics
+    predictions_df : pd.DataFrame  — per-window true labels + predicted probs
+                     columns: model, experiment, subject, window_idx,
+                              y_true, y_prob
+    """
+    
+    subjects = df["subject"].unique()
+    metrics_rows=[] 
+    prediction_rows=[]
 
     for test_sub in subjects:
         print(f"\n--- Testing on {test_sub} ---")
@@ -28,8 +54,6 @@ def run_loso(df, model):
         train_df = df[df["subject"] != test_sub]
         test_df  = df[df["subject"] == test_sub]
 
-        # features / labels
-        NON_FEATURE_COLS = ["label", "subject", "window_idx", "start_time", "end_time"]
         X_train = train_df.drop(columns=NON_FEATURE_COLS)
         
        
@@ -38,8 +62,13 @@ def run_loso(df, model):
        
         X_test  = test_df.drop(columns=NON_FEATURE_COLS)
         y_test = test_df["label"]
+        # Keeping  window_idx so predictions can be traced back to raw windows
+        window_idx_test = test_df["window_idx"].values
         
-        #for imputation
+        
+         #Imputation (median from train only  no data leakage) 
+        # WHY median not mean: robust to outlier spikes common in physiological
+        # signals (e.g. EDA artefacts, motion spikes in ACC).
         medians = X_train.median()
         X_train = X_train.fillna(medians)
         X_test  = X_test.fillna(medians)
@@ -56,16 +85,30 @@ def run_loso(df, model):
 
         # predict
         preds = model.predict(X_test)
-         # ROC AUC Requires Probabilities for Class 1
-        try:
+        
+        if hasattr(model, "predict_proba"):
             probs = model.predict_proba(X_test)[:, 1]
+        else:
+            # Fallback when the model doesnt provide us probability we just use the scaled confidence values.: use decision_function and min-max normalise to [0,1]
+            # so the output is still a usable soft score.
+            scores = model.decision_function(X_test)
+            probs = (scores - scores.min()) / (scores.max() - scores.min() + 1e-9)
+        
+            # ── Per-window prediction rows ────────────────────────────────────────
+        for idx, (true_label, prob) in enumerate(zip(y_test.values, probs)):
+            prediction_rows.append({
+                "model":      model_name,
+                "experiment": exp_name,
+                "subject":    test_sub,
+                "window_idx": window_idx_test[idx],
+                "y_true":     int(true_label),
+                "y_prob":     float(prob),
+            })
+        try:
             auc = roc_auc_score(y_test, probs)
         except ValueError:
-            # Handles edge case where test subject might only have 1 class entirely
+            # Happens if test subject has only one class present
             auc = np.nan
-        except AttributeError:
-            # Fallback if a model without predict_proba is used
-            auc = np.nan 
         # metrics
         acc = accuracy_score(y_test, preds)
         precision = precision_score(y_test, preds, average="binary", zero_division=0)
@@ -85,7 +128,7 @@ def run_loso(df, model):
        
 
         # store
-        results.append({
+        metrics_rows.append({
             "subject": test_sub,
             "accuracy": acc,
             "precision": precision, # Class 1 (Stress) Precision
@@ -99,12 +142,17 @@ def run_loso(df, model):
             "tp": tp
         })
 
-    results_df = pd.DataFrame(results)
+    metrics_df = pd.DataFrame(metrics_rows)
+    predictions_df=pd.DataFrame(prediction_rows)
+    _print_summary(metrics_df)
+
+    return metrics_df, predictions_df
+def _print_summary(metrics_df: pd.DataFrame) -> None:
     # Calculate Global Confusion Matrix
-    total_tn = results_df['tn'].sum()
-    total_fp = results_df['fp'].sum()
-    total_fn = results_df['fn'].sum()
-    total_tp = results_df['tp'].sum()
+    total_tn = metrics_df['tn'].sum()
+    total_fp = metrics_df['fp'].sum()
+    total_fn = metrics_df['fn'].sum()
+    total_tp = metrics_df['tp'].sum()
 
     print("\n=== GLOBAL CONFUSION MATRIX ===")
     print(f"True Negatives (Correct Baseline) : {total_tn}")
@@ -114,7 +162,5 @@ def run_loso(df, model):
 
     print("\n=== FINAL AVERAGED RESULTS ACROSS SUBJECTS ===")
     # Drop confusion matrix raw counts from mean calculation to avoid confusion
-    avg_metrics = results_df.drop(columns=['subject', 'tn', 'fp', 'fn', 'tp']).mean(numeric_only=True)
+    avg_metrics = metrics_df.drop(columns=['subject', 'tn', 'fp', 'fn', 'tp']).mean(numeric_only=True)
     print(avg_metrics.to_string())
-
-    return results_df
