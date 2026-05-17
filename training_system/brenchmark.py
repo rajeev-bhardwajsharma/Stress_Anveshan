@@ -16,6 +16,12 @@ from data_loader import load_dataset
 from loso import run_loso
 from model import get_model
 import traceback
+# Default: a 'results/' folder next to this script.
+# Override without touching code: export WDM_OUTPUT_DIR=/wherever/you/want
+OUTPUT_DIR = Path(
+    os.environ.get("WDM_OUTPUT_DIR", Path(__file__).resolve().parent / "results")
+)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── 1. Experiments ───────────────────────────────────────────────────────────
 EXPERIMENTS = {
@@ -34,11 +40,13 @@ EXPERIMENTS = {
     "wrist_all": {"wrist": ["acc", "eda", "heart", "statistical"]},
 }
 
-# ── 2. Models — scalable modifies model.py and add a string here itemize the string
+# ── 2. Models  scalable modifies model.py and add a string here itemize the string
 MODELS = ["rf", "svm","xgboost"]
 
 # ── 3. Run 
-all_results = []
+all_metrics      = []
+all_predictions  = []
+
 
 for model_name in MODELS:
     print(f"\n{'#'*60}")
@@ -53,29 +61,44 @@ for model_name in MODELS:
         try:
             df = load_dataset(config)
             model = get_model(model_name)
-            results_df = run_loso(df, model)
+            # run_loso now returns (metrics_df, predictions_df)
+            metrics_df, predictions_df = run_loso(
+                df,
+                model,
+                model_name=model_name,
+                exp_name=exp_name,
+            )
 
-            results_df.insert(0, "experiment", exp_name)
-            results_df.insert(0, "model", model_name)
+           #  both DataFrames so rows are self-identifying after concat
+            metrics_df.insert(0, "experiment", exp_name)
+            metrics_df.insert(0, "model",      model_name)
 
-            all_results.append(results_df)
+            all_metrics.append(metrics_df)
+            all_predictions.append(predictions_df)
 
         except Exception as e:
             print(f"   Problem {model_name} / {exp_name}: {e}")
             traceback.print_exc()
             continue
 
-# ── 4. Save 
-detailed_df = pd.concat(all_results, ignore_index=True)
-detailed_df.to_csv("/home/rs/ml-projects/result_of_training/results_detailed.csv", index=False)
+if all_metrics:
+    detailed_df = pd.concat(all_metrics, ignore_index=True)
+    out_metrics = OUTPUT_DIR / "results_detailed.csv"
+    detailed_df.to_csv(out_metrics, index=False)
+    print(f"\n Saved: {out_metrics}  ({len(detailed_df)} rows)")
 
-print("\n Saved Succefull results_detailed.csv")
-print(f"   Total rows: {len(detailed_df)}")
-print("\n─ Mean F1 by model & experiment ──")
-print(
-    detailed_df
-    .groupby(["model", "experiment"])["f1"]
-    .mean()
-    .round(3)
-    .to_string()
-)
+    print("\n── Mean F1 by model & experiment ──")
+    print(
+        detailed_df
+        .groupby(["model", "experiment"])["f1"]
+        .mean()
+        .round(3)
+        .to_string()
+    )
+
+if all_predictions:
+    curves_df = pd.concat(all_predictions, ignore_index=True)
+    out_curves = OUTPUT_DIR / "predictions_for_curves.csv"
+    curves_df.to_csv(out_curves, index=False)
+    print(f"\n Saved: {out_curves}  ({len(curves_df)} rows)")
+    print(f"   Columns: {list(curves_df.columns)}")
