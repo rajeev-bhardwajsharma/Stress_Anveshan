@@ -21,16 +21,14 @@ Labels in the raw files:
   0 = transition
 
 After binarize_labels() only baseline(→0) and stress(→1) remain.
-binarize_labels() is called ONCE inside load_dataset().
-Do NOT call it again in train.py or benchmark.py.
+
 """
 
 import os
 import pandas as pd
 
-# ── Configuration ─────────────────────────────────────────────────────────────
-# Change this one line if your dataset lives elsewhere.
-# You can also override it with an environment variable:
+#  Configuration 
+#  can also override it with an environment variable:
 #   export WDM_BASE_PATH=/data/my_dataset
 BASE_PATH = os.environ.get("WDM_BASE_PATH", "../WDM_dataset/Features")
 
@@ -38,7 +36,7 @@ BASE_PATH = os.environ.get("WDM_BASE_PATH", "../WDM_dataset/Features")
 MERGE_KEYS = ["subject", "window_idx", "start_time", "end_time", "label"]
 
 
-# ── Loaders ───────────────────────────────────────────────────────────────────
+# Loaders 
 
 def load_data(modality: str, feature_type: str) -> pd.DataFrame:
     """Load a single parquet file for one (modality, feature_type) pair."""
@@ -103,7 +101,7 @@ def load_dataset(config: dict) -> pd.DataFrame:
     return final_df
 
 
-# ── Label helpers ─────────────────────────────────────────────────────────────
+#  Label helpers 
 
 def binarize_labels(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -117,7 +115,7 @@ def binarize_labels(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ── Debug helper ──────────────────────────────────────────────────────────────
+# Debug helper
 
 def inspect_data(df: pd.DataFrame) -> None:
     print("Shape:", df.shape)
@@ -130,7 +128,7 @@ def inspect_data(df: pd.DataFrame) -> None:
         print("\nColumns with NaNs:\n", nan_cols)
 
 
-# ── Quick smoke-test ──────────────────────────────────────────────────────────
+# Quick smoke-test
 """
 if __name__ == "__main__":
     config = {"wrist": ["statistical"]}
