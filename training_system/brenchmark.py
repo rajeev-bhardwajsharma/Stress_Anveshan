@@ -1,11 +1,11 @@
 """
 benchmark.py
 ------------
-Entry point for the full experiment grid.
+Entry point for the full training grid.
 
 Outputs (written to OUTPUT_DIR):
-  results_detailed.csv      — per-subject metrics for every model × experiment
-  predictions_for_curves.csv — per-window y_true + y_prob for ROC / PR curves
+  results_detailed.csv       per-subject metrics for every model * experiment
+  predictions_for_curves.csv  per-window y_true + y_prob for ROC / PR curves
 
 Usage:
   python benchmark.py
@@ -15,6 +15,8 @@ import pandas as pd
 from data_loader import load_dataset
 from loso import run_loso
 from model import get_model
+from pathlib import Path
+import os
 import traceback
 # Default: a 'results/' folder next to this script.
 # Override without touching code: export WDM_OUTPUT_DIR=/wherever/you/want
