@@ -1,0 +1,24 @@
+{
+  "model": "cnn_lstm",
+  "experiment": "wrist_eda",
+  "feature_names": [
+    "wrist_eda_scl_mean",
+    "wrist_eda_scl_std",
+    "wrist_eda_scl_slope",
+    "wrist_eda_n_scr",
+    "wrist_eda_scr_amp_mean",
+    "wrist_eda_scr_amp_std",
+    "wrist_eda_scr_auc",
+    "wrist_eda_scr_rise_mean"
+  ],
+  "input_shape": [
+    1,
+    8
+  ],
+  "n_subjects": 15,
+  "n_windows": 975,
+  "label_map": {
+    "0": "baseline",
+    "1": "stress"
+  }
+}

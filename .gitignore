@@ -26,7 +26,8 @@ WDM_dataset/WESAD/
 # =========================
 WDM_dataset/Interim/
 WDM_dataset/Features/
-
+!WDM_dataset/Interim/
+!WDM_dataset/Interim/*.py
 # =========================
 # Visualizations Outputs
 # =========================
@@ -78,3 +79,25 @@ Untitled5.ipynb
 
 # images and csv files 
 result_of_training/
+
+# datasets
+WDM_dataset/
+
+# temporary office lock files
+.~lock*
+
+# notebooks
+Untitled6.ipynb
+
+# results
+training_system/results/
+result_of_training/
+
+# shap outputs
+training_system/shap_*.png
+training_system/shap_*.csv
+
+# non-production models
+training_system/saved_production_models/rf/
+training_system/saved_production_models/svm/
+training_system/saved_production_models/xgboost/

@@ -1,0 +1,24 @@
+{
+  "model": "cnn_lstm",
+  "experiment": "chest_eda",
+  "feature_names": [
+    "chest_eda_scl_mean",
+    "chest_eda_scl_std",
+    "chest_eda_scl_slope",
+    "chest_eda_n_scr",
+    "chest_eda_scr_amp_mean",
+    "chest_eda_scr_amp_std",
+    "chest_eda_scr_auc",
+    "chest_eda_scr_rise_mean"
+  ],
+  "input_shape": [
+    1,
+    8
+  ],
+  "n_subjects": 15,
+  "n_windows": 975,
+  "label_map": {
+    "0": "baseline",
+    "1": "stress"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "model": "cnn_lstm",
+  "experiment": "chest_acc",
+  "feature_names": [
+    "chest_acc_x_mean",
+    "chest_acc_x_std",
+    "chest_acc_x_min",
+    "chest_acc_x_max",
+    "chest_acc_x_range",
+    "chest_acc_x_abs_integral",
+    "chest_acc_y_mean",
+    "chest_acc_y_std",
+    "chest_acc_y_min",
+    "chest_acc_y_max",
+    "chest_acc_y_range",
+    "chest_acc_y_abs_integral",
+    "chest_acc_z_mean",
+    "chest_acc_z_std",
+    "chest_acc_z_min",
+    "chest_acc_z_max",
+    "chest_acc_z_range",
+    "chest_acc_z_abs_integral",
+    "chest_acc_mag_mean",
+    "chest_acc_mag_std",
+    "chest_acc_mag_energy",
+    "chest_acc_mag_peak_freq",
+    "chest_acc_mag_spectral_entropy"
+  ],
+  "input_shape": [
+    1,
+    23
+  ],
+  "n_subjects": 15,
+  "n_windows": 975,
+  "label_map": {
+    "0": "baseline",
+    "1": "stress"
+  }
+}

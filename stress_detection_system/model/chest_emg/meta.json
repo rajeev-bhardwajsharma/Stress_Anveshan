@@ -1,0 +1,28 @@
+{
+  "model": "cnn_lstm",
+  "experiment": "chest_emg",
+  "feature_names": [
+    "chest_emg_mean_abs",
+    "chest_emg_rms",
+    "chest_emg_iemg",
+    "chest_emg_var",
+    "chest_emg_waveform_length",
+    "chest_emg_mean_freq",
+    "chest_emg_median_freq",
+    "chest_emg_peak_freq",
+    "chest_emg_total_power",
+    "chest_emg_n_bursts",
+    "chest_emg_burst_amp_mean",
+    "chest_emg_burst_duration"
+  ],
+  "input_shape": [
+    1,
+    12
+  ],
+  "n_subjects": 15,
+  "n_windows": 975,
+  "label_map": {
+    "0": "baseline",
+    "1": "stress"
+  }
+}

@@ -1,0 +1,59 @@
+
+project:
+  name: WESAD Stress Detection API
+  version: "1.0.0"
+
+paths:
+  models_dir: /home/rs/ml-projects/stress_detection_system/model
+  features_dir: ""
+
+model:
+  active_tag: ""
+  model_filename: final_model.keras
+  scaler_filename: scaler.joblib
+
+inference:
+  decision_threshold: 0.50
+  window_size_sec: 60
+
+sensors:
+  chest_all:
+    - ACC
+    - ECG
+    - EMG
+    - EDA
+    - Temp
+    - Resp
+  wrist_all:
+    - ACC
+    - BVP
+    - EDA
+    - TEMP
+
+sampling_rates:
+  chest_ECG: 700
+  chest_EDA: 700
+  chest_EMG: 700
+  chest_RESP: 700
+  chest_TEMP: 700
+  chest_ACC: 700
+  wrist_BVP: 64
+  wrist_ACC: 32
+  wrist_EDA: 4
+  wrist_TEMP: 4
+
+bundles:
+  chest:
+    - chest_statistical
+    - chest_heart
+    - chest_eda
+    - chest_acc
+    - chest_emg
+  wrist:
+    - wrist_statistical
+    - wrist_heart
+    - wrist_eda
+    - wrist_acc
+
+logging:
+  level: INFO
