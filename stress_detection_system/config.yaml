@@ -4,7 +4,7 @@ project:
   version: "1.0.0"
 
 paths:
-  models_dir: /home/rs/ml-projects/stress_detection_system/model
+  models_dir: ./model
   features_dir: ""
 
 model:

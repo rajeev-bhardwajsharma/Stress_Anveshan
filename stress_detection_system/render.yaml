@@ -2,6 +2,7 @@ services:
   - type: web
     name: wesad-stress-api
     env: python
+    rootDir: stress_detection_system
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     plan: free
