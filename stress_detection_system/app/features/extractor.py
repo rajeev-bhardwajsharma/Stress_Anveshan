@@ -33,7 +33,7 @@ import os
 _FEATURE_MODULE_DIR = Path(
     os.environ.get(
         "WESAD_FEATURE_MODULE_DIR",
-        "/home/rs/ml-projects/WDM_dataset"   # default — change if different
+        str(Path(__file__).resolve().parents[2] / "feature_extraction")
     )
 )
 
