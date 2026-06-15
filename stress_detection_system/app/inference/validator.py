@@ -1,6 +1,19 @@
 """
 app/inference/validator.py
 Layer 1: structural and content validation of the incoming request.
+
+Key change from original
+------------------------
+The original validator only checked that declared-available sensors had valid
+data. That was correct. The problem was in engine.py requiring ALL sensors.
+This validator is unchanged in logic but now includes a clearer check:
+  - If a sensor is declared available AND data is provided → validate shape/NaN
+  - If a sensor is declared available BUT data is missing → error (missing)
+  - If a sensor is NOT declared available but data IS provided → error (inconsistent)
+  - If a sensor is NOT declared and no data → fine, that sensor just won't be used
+
+The validator does NOT require all possible sensors to be present.
+Partial sensor sets are valid as long as they are self-consistent.
 """
 from __future__ import annotations
 
@@ -11,7 +24,7 @@ import numpy as np
 from app.core.settings import settings
 from app.schemas.predict import PredictRequest, ValidationResponse
 
-_FS = settings.sampling_rates
+_FS  = settings.sampling_rates
 _WIN = settings.inference.window_size_sec
 
 # Expected sample counts per signal for a 60-second window
@@ -46,8 +59,16 @@ def validate_request(req: PredictRequest) -> Tuple[ValidationResponse, bool]:
     """
     Returns (ValidationResponse, ok: bool).
     ok=True means the request passed all checks.
+
+    Rules
+    -----
+    1. At least ONE sensor must be declared and supplied (can't predict with nothing).
+    2. For every sensor in available_sensors: data must be provided and valid.
+    3. Data provided for a sensor NOT in available_sensors is flagged as inconsistent.
+    4. Partial sensor sets (e.g. only ECG, no EMG) are perfectly fine — the engine
+       will use whichever bundle models are satisfiable.
     """
-    errors: List[str] = []
+    errors: List[str]  = []
     missing: List[str] = []
     invalid: List[str] = []
 
@@ -57,7 +78,7 @@ def validate_request(req: PredictRequest) -> Tuple[ValidationResponse, bool]:
     cs = req.signals.chest
     ws = req.signals.wrist
 
-    # ---- Chest signal validation ----
+    # ── Chest signal validation ───────────────────────────────────────────
     chest_map = {
         "ECG":  ("chest_ECG",  cs.ECG  if cs else None),
         "EDA":  ("chest_EDA",  cs.EDA  if cs else None),
@@ -72,11 +93,12 @@ def validate_request(req: PredictRequest) -> Tuple[ValidationResponse, bool]:
                 missing.append(f"chest.{sensor_key}")
             else:
                 _check_signal(sig_name, data, errors)
-        # If declared unavailable but data provided: flag as inconsistent
         elif data is not None:
-            invalid.append(f"chest.{sensor_key} (not in available_sensors but data provided)")
+            invalid.append(
+                f"chest.{sensor_key} (data provided but not listed in available_sensors)"
+            )
 
-    # ---- Wrist signal validation ----
+    # ── Wrist signal validation ───────────────────────────────────────────
     wrist_map = {
         "BVP":  ("wrist_BVP",  ws.BVP  if ws else None),
         "EDA":  ("wrist_EDA",  ws.EDA  if ws else None),
@@ -90,7 +112,17 @@ def validate_request(req: PredictRequest) -> Tuple[ValidationResponse, bool]:
             else:
                 _check_signal(sig_name, data, errors)
         elif data is not None:
-            invalid.append(f"wrist.{sensor_key} (not in available_sensors but data provided)")
+            invalid.append(
+                f"wrist.{sensor_key} (data provided but not listed in available_sensors)"
+            )
+
+    # ── Must have at least something to work with ─────────────────────────
+    total_declared = len(avail_chest) + len(avail_wrist)
+    if total_declared == 0:
+        errors.append(
+            "available_sensors is empty for both chest and wrist. "
+            "Declare at least one sensor."
+        )
 
     all_errors = missing + invalid + errors
     ok = len(all_errors) == 0
