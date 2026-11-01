@@ -1,16 +1,5 @@
-from __future__ import annotations #always first line
-#can remove it due to environment issue patch work
-import keras
+from __future__ import annotations
 
-# Force Keras to safely drop the quantization_config attribute during load
-_original_layer_init = keras.layers.Layer.__init__
-def _patched_layer_init(self, *args, **kwargs):
-    kwargs.pop('quantization_config', None)
-    _original_layer_init(self, *args, **kwargs)
-keras.layers.Layer.__init__ = _patched_layer_init
-
-#patch work
-# --- Your original main.py code (FastAPI, etc.) continues below ---
 """
 main.py — WESAD Stress Detection API
 Run with:  uvicorn main:app --host 0.0.0.0 --port 8000 --reload

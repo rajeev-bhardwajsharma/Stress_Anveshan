@@ -146,3 +146,39 @@ def test_predict_no_eligible_group(client):
     r = client.post("/api/v1/predict", json=bad)
     # Validation should fail (missing declared sensors)
     assert r.status_code in (200, 422)
+
+
+# ---- Regression: inference must reproduce training preprocessing ----------
+# Uses the real bundles in model/. Feature dicts arrive from the extractor in
+# arbitrary order and with upper-case sensor names (chest_ECG_...), while the
+# models were trained on lower-case names in meta.json order. A past version
+# sorted features alphabetically, silently scrambling every model's input.
+
+@pytest.mark.parametrize("bundle", ["chest_heart", "wrist_statistical", "wrist_eda"])
+def test_predict_one_matches_training_pipeline(bundle):
+    from pathlib import Path
+    from app.models.loader import _load_single_bundle
+    from app.inference.engine import _predict_one
+
+    lm = _load_single_bundle(Path(__file__).parents[1] / "model" / bundle, bundle)
+    assert lm is not None and lm.feature_names and lm.medians is not None
+
+    rng = np.random.default_rng(0)
+    x = (lm.medians * (1 + 0.3 * rng.standard_normal(len(lm.medians)))).astype(np.float32)
+    x[1] = np.nan                                   # one failed feature
+
+    # Expected: training pipeline (median-impute -> scale -> nan_to_num -> model)
+    xi = np.where(np.isfinite(x), x, lm.medians).reshape(1, -1)
+    xs = np.nan_to_num(lm.scaler.transform(xi)).reshape(1, 1, -1).astype(np.float32)
+    expected = float(np.squeeze(lm.keras_model(xs, training=False)))
+
+    # Actual: shuffled dict with extractor-style upper-case sensor names
+    def extractor_style(name):
+        dev, sensor, rest = name.split("_", 2)
+        return f"{dev}_{sensor.upper()}_{rest}"
+    order = rng.permutation(len(x))
+    features = {extractor_style(lm.feature_names[i]): float(x[i]) for i in order}
+
+    stress_p, non_stress_p = _predict_one(lm, features)
+    assert stress_p == pytest.approx(expected, abs=1e-6)
+    assert stress_p + non_stress_p == pytest.approx(1.0)

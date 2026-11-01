@@ -42,6 +42,7 @@ import pickle
 import warnings
 import numpy as np
 import pandas as pd
+import os
 from pathlib import Path
 from typing import Any
 
@@ -57,8 +58,10 @@ warnings.filterwarnings("ignore")
 # ─────────────────────────────────────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
-INTERIM_ROOT = Path("/home/rs/ml-projects/WDM_dataset/Interim")
-FEATURE_ROOT = Path("/home/rs/ml-projects/WDM_dataset/Features")
+# Data root: set WDM_ROOT to override (default: ./WDM_dataset, run from repo root)
+WDM_ROOT     = Path(os.environ.get("WDM_ROOT", "WDM_dataset")).resolve()
+INTERIM_ROOT = WDM_ROOT / "Interim"
+FEATURE_ROOT = WDM_ROOT / "Features"
 
 ALL_SUBJECTS = [f"S{i}" for i in range(2, 18) if i != 12]
 
@@ -232,7 +235,7 @@ def process_subject(subject_id: str) -> None:
     Uses absolute paths to prevent duplicate WDM_dataset folders.
     """
     # 1. Define specific subject directory
-    # Path: /home/rs/ml-projects/WDM_dataset/Features/S2/chest/
+    # Path: WDM_dataset/Features/S2/chest/
     subject_chest_dir = FEATURE_ROOT / subject_id / "chest"
     emg_out_path = subject_chest_dir / f"{subject_id}_chest_emg.parquet"
     
@@ -284,7 +287,7 @@ def process_subject(subject_id: str) -> None:
 
     # 5. Save the specific EMG bundle
     if emg_rows:
-        # Create /home/rs/ml-projects/WDM_dataset/Features/S2/chest/ if it doesn't exist
+        # Create WDM_dataset/Features/S2/chest/ if it doesn't exist
         subject_chest_dir.mkdir(parents=True, exist_ok=True)
         
         df = pd.DataFrame(emg_rows)

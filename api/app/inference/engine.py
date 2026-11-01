@@ -90,23 +90,35 @@ def _predict_one(
     bundle_features: Dict[str, float],
 ) -> Tuple[float, float]:
     """
-    Scale → reshape → predict with one Keras model.
+    Reproduce the training preprocessing exactly, then predict:
+
+      1. order features as in training (meta.json; names matched
+         case-insensitively, e.g. chest_ECG_hr_mean == chest_ecg_hr_mean)
+      2. impute missing / NaN features with the training medians
+      3. StandardScaler.transform, then replace residual NaN/Inf with 0
+      4. reshape to the model's (1, 1, F) input and run a forward pass
+
     Returns (stress_prob, non_stress_prob).
     """
-    scaler = model.scaler
-    if hasattr(scaler, "feature_names_in_"):
-        col_order = list(scaler.feature_names_in_)
-    else:
-        col_order = sorted(bundle_features.keys())
+    by_lower = {k.lower(): v for k, v in bundle_features.items()}
+    names = model.feature_names
+    missing = [n for n in names if n.lower() not in by_lower]
+    if len(missing) == len(names):
+        raise ValueError(f"no extracted feature matches the training features of '{model.bundle}'")
+    if missing:
+        logger.warning(f"Bundle={model.bundle}: {len(missing)} feature(s) missing, imputed with training medians")
 
-    x = np.array([bundle_features[c] for c in col_order], dtype=np.float32).reshape(1, -1)
-    x_scaled = scaler.transform(x)
+    x = np.array([by_lower.get(n.lower(), np.nan) for n in names], dtype=np.float32)
+    x = np.where(np.isfinite(x), x, model.medians).reshape(1, -1)
 
-    input_shape = model.keras_model.input_shape
-    if len(input_shape) == 3:
+    x_scaled = model.scaler.transform(x)
+    x_scaled = np.nan_to_num(x_scaled, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+
+    if len(model.keras_model.input_shape) == 3:
         x_scaled = x_scaled.reshape(1, 1, x_scaled.shape[-1])
 
-    preds = model.keras_model.predict(x_scaled, verbose=0)
+    # Direct call instead of .predict(): no per-request tf.function retracing
+    preds = model.keras_model(x_scaled, training=False).numpy()
     preds = np.squeeze(preds)
 
     if preds.ndim == 0:

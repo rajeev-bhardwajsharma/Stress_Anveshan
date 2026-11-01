@@ -100,7 +100,7 @@ class PredictResponse(BaseModel):
 
 class LoadedModelInfo(BaseModel):
     bundle: str
-    group: Literal["CHEST_ALL", "WRIST_ALL"]
+    group: Literal["CHEST_ALL", "WRIST_ALL", "MULTIMODAL"]
     input_features: int
 
 

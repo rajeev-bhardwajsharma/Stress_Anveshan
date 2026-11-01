@@ -1,103 +1,47 @@
-# =========================
-# Virtual Environment
-# =========================
+# ── Environments ─────────────────────────────────────────────
 ml_env/
 venv/
 .venv/
 
-# =========================
-# Python Cache
-# =========================
+# ── Python / Jupyter ─────────────────────────────────────────
 __pycache__/
 *.py[cod]
-
-# =========================
-# Jupyter
-# =========================
 .ipynb_checkpoints/
+Untitled*.ipynb
 
-# =========================
-# Raw Dataset
-# =========================
-WDM_dataset/WESAD/
-
-# =========================
-# Large Processed Data
-# =========================
-WDM_dataset/Interim/
-WDM_dataset/Features/
-!WDM_dataset/Interim/
-!WDM_dataset/Interim/*.py
-# =========================
-# Visualizations Outputs
-# =========================
-wesad_top7_graphs.ipynb
-wesad_basic_exploration.ipynb
-wesad_eda_visualizations.ipynb
-wesad_ppt_graphs.ipynb
-
-WDM_dataset/Visualizations/
-WDM_dataset/Visualizations2/
-
-# =========================
-# ML Model Files
-# =========================
+# ── Data (never committed — see data/README.md) ──────────────
+WDM_dataset/
 *.pkl
+*.pkl.gz
+
+# ── Model files ──────────────────────────────────────────────
+# Ignored everywhere EXCEPT the deployed bundles in api/model/,
+# which the API and the paper's latency numbers depend on.
+*.keras
 *.joblib
 *.h5
-*.keras
 *.pt
 *.pth
+!api/model/**/final_model.keras
+!api/model/**/scaler.joblib
 
-# =========================
-# Logs / Results
-# =========================
+# Fold checkpoints and classical-model outputs
+classical_baselines/results/*.png
+classical_baselines/shap_*.png
+classical_baselines/shap_*.csv
+classical_baselines/saved_production_models/
+
+# ── Generated outputs ────────────────────────────────────────
+# results/*.csv are committed: they are the saved LOSO outputs
+# that reproduce/paper_results.py regenerates the paper from.
+reproduce/output/
 logs/
 runs/
 tensorboard_logs/
 
-# =========================
-# VSCode / IDE
-# =========================
+# ── Editor / OS junk ─────────────────────────────────────────
 .vscode/
 .idea/
-
-# =========================
-# OS Junk
-# =========================
 .DS_Store
 Thumbs.db
-
-
-Untitled.ipynb
-Untitled1.ipynb
-Untitled2.ipynb
-Untitled3.ipynb
-Untitled4.ipynb
-Untitled5.ipynb
-
-
-# images and csv files 
-result_of_training/
-
-# datasets
-WDM_dataset/
-
-# temporary office lock files
 .~lock*
-
-# notebooks
-Untitled6.ipynb
-
-# results
-training_system/results/
-result_of_training/
-
-# shap outputs
-training_system/shap_*.png
-training_system/shap_*.csv
-
-# non-production models
-training_system/saved_production_models/rf/
-training_system/saved_production_models/svm/
-training_system/saved_production_models/xgboost/

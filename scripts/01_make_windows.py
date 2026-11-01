@@ -13,6 +13,7 @@ Skips S12 automatically (missing in WESAD — only 15 subjects, S12 excluded).
 
 import pickle
 import numpy as np
+import os
 from pathlib import Path
 from scipy import stats
 from typing import Any
@@ -22,8 +23,10 @@ from typing import Any
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
 
-DATASET_ROOT = Path("WDM_dataset/WESAD")
-OUTPUT_ROOT  = Path("WDM_dataset/Interim")
+# Data root: set WDM_ROOT to override (default: ./WDM_dataset, run from repo root)
+WDM_ROOT     = Path(os.environ.get("WDM_ROOT", "WDM_dataset"))
+DATASET_ROOT = WDM_ROOT / "WESAD"
+OUTPUT_ROOT  = WDM_ROOT / "Interim"
 
 # WESAD subjects — S12 does not exist in the dataset
 ALL_SUBJECTS = [f"S{i}" for i in range(2, 18) if i != 12]
