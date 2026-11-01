@@ -3,33 +3,30 @@
 ## 1. Install dependencies
 
 ```bash
-cd wesad_api
+cd api
 pip install -r requirements.txt
 ```
 
-## 2. Point config to your models
+## 2. Models
 
-Edit `config.yaml`:
-```yaml
-paths:
-  models_dir: /home/rs/ml-projects/WDM_dataset/Models
-model:
-  active_tag: cnn_lstm          # ← your MODEL_TAG folder name
-  model_filename: final_model.keras
-  scaler_filename: scaler.joblib
+The trained CNN-LSTM bundles are already in `model/`, and `config.yaml` points there (`models_dir: ./model`). Each bundle folder contains:
+
+```
+model/chest_statistical/
+    final_model.keras   trained network (Keras 3.13.2)
+    scaler.joblib       StandardScaler fit on all training subjects
+    medians.npy         per-feature medians for NaN imputation
+    meta.json           exact training feature order + input shape
 ```
 
-Each bundle directory must contain:
-```
-Models/cnn_lstm/chest_statistical/
-    final_model.keras
-    scaler.joblib
-```
+To serve different models, replace these folders or change `models_dir` in `config.yaml`.
 
-## 3. Set feature module path (if different from default)
+## 3. Feature modules
+
+The API imports the feature code from `feature_extraction/` in this folder, the same code used to build the training features. To point it elsewhere, set:
 
 ```bash
-export WESAD_FEATURE_MODULE_DIR=/home/rs/ml-projects/WDM_dataset
+export WESAD_FEATURE_MODULE_DIR=/path/to/feature_extraction
 ```
 
 ## 4. Start the server
@@ -38,11 +35,26 @@ export WESAD_FEATURE_MODULE_DIR=/home/rs/ml-projects/WDM_dataset
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## 5. Run smoke tests (no real models needed)
+## 5. Run tests
 
 ```bash
-pytest tests/test_smoke.py -v
+pytest tests/ -v
 ```
+
+The endpoint smoke tests mock the model registry. The regression tests in `test_predict_one_matches_training_pipeline` load real bundles from `model/` and check that inference reproduces training preprocessing.
+
+---
+
+## How a prediction is made
+
+For each sensor bundle whose signals are present in the request:
+
+1. Features are extracted from the 60 s window with the same `feature_extraction/` code used for training.
+2. They are put in the **exact training column order** from `meta.json`. Names are matched case-insensitively, so the extractor's `chest_ECG_hr_mean` matches the training name `chest_ecg_hr_mean`.
+3. Missing or NaN features are filled with the training medians (`medians.npy`).
+4. The features are z-scaled with the bundle's `scaler.joblib`, residual NaN/Inf values are set to 0, and the model runs on a `(1, 1, F)` input.
+
+The stress probabilities of all bundles used are then averaged (Eq. 1 in the paper). If a sensor is missing, its bundles are skipped, so the API degrades gracefully instead of failing.
 
 ---
 
@@ -112,7 +124,7 @@ curl -X POST http://localhost:8000/api/v1/predict \
 ## Directory layout
 
 ```
-wesad_api/
+api/
 ├── config.yaml                  ← all paths, thresholds, sensor lists
 ├── main.py                      ← FastAPI app + lifespan startup
 ├── requirements.txt
@@ -123,9 +135,9 @@ wesad_api/
 │   ├── schemas/
 │   │   └── predict.py           ← all Pydantic models
 │   ├── features/
-│   │   └── extractor.py         ← calls your 5 feature modules
+│   │   └── extractor.py         ← calls the feature_extraction/ modules
 │   ├── models/
-│   │   └── loader.py            ← scans Models/, loads .keras + scaler.joblib
+│   │   └── loader.py            ← scans model/, loads .keras + scaler + medians + meta
 │   ├── inference/
 │   │   ├── validator.py         ← shape/NaN/sensor checks
 │   │   └── engine.py            ← eligibility → predict → ensemble

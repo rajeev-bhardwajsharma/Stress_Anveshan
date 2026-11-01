@@ -1,0 +1,26 @@
+# Research environment: windowing, feature extraction, training notebooks,
+# and reproduce/paper_results.py. The API has its own api/requirements.txt.
+#
+# Only reproducing the paper tables from results/?  pandas, numpy, scipy,
+# scikit-learn and matplotlib are enough.
+
+numpy>=1.26
+pandas>=2.1
+scipy>=1.13
+scikit-learn==1.6.1    # scalers in api/model/ were saved with 1.6.1
+matplotlib>=3.8
+pyarrow>=15            # parquet feature files
+
+# Feature extraction
+neurokit2>=0.2.9
+
+# Deep learning (models in api/model/ were saved with Keras 3.13.2)
+tensorflow>=2.18
+keras==3.13.2
+joblib>=1.4
+
+# Classical baselines (preliminary benchmarking only)
+xgboost>=2.0
+shap>=0.45
+
+jupyter
